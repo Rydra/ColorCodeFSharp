@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ColorCodeFSharp", "ColorCodeFSharp\ColorCodeFSharp.fsproj", "{A698EA8D-8E92-4BC4-93A9-E9CCC8290AFC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ColorCodeFSharp.UnitTests", "ColorCodeFSharp.UnitTests\ColorCodeFSharp.UnitTests.fsproj", "{51FA1770-E323-49AE-9F7F-2E47CC22FB75}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A698EA8D-8E92-4BC4-93A9-E9CCC8290AFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A698EA8D-8E92-4BC4-93A9-E9CCC8290AFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A698EA8D-8E92-4BC4-93A9-E9CCC8290AFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A698EA8D-8E92-4BC4-93A9-E9CCC8290AFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51FA1770-E323-49AE-9F7F-2E47CC22FB75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51FA1770-E323-49AE-9F7F-2E47CC22FB75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51FA1770-E323-49AE-9F7F-2E47CC22FB75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51FA1770-E323-49AE-9F7F-2E47CC22FB75}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
