@@ -15,10 +15,9 @@ let ``Change color test``() =
     toColor "blaCK" |> returnOrFail =! Black
 
 [<TestCase("Pink, Red, Black, Green", 4, 0)>]
-[<TestCase("Pink, Red, Black, Green", 4, 0)>]
-[<TestCase("Pink, Red, Black, Green", 4, 0)>]
-[<TestCase("Pink, Red, Black, Green", 4, 0)>]
-[<TestCase("Pink, Red, Black, Green", 4, 0)>]
+[<TestCase("Red, Pink, Green, Black", 0, 4)>]
+[<TestCase("Pink, Black, Red, Green", 2, 2)>]
+[<TestCase("Blue, Yellow, Yellow, Orange", 0, 0)>]
 let ``Checker tests`` (colorsText:string) matchpos matchcolor =
     let colors = 
         colorsText.Split([|","|], StringSplitOptions.RemoveEmptyEntries) 

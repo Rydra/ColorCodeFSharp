@@ -152,9 +152,8 @@ module Domain =
                 fail "Fill all slots first before confirming"
             else
                 colorChecker guess gameState.Solution |> ok
-
-        feedback >>= (fun fb ->
-
+                
+        (fun fb ->
             let newStatus =
                 if fb.MatchedPositions = gameState.NSlots then
                     Terminated Won
@@ -168,4 +167,4 @@ module Domain =
                 CompletedGuesses = (gameState.CurrentTry, guess, fb) :: gameState.CompletedGuesses
                 CurrentTry = gameState.CurrentTry + 1
                 Status = newStatus
-            } |> ok)
+            }) <!> feedback
