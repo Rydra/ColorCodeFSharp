@@ -5,6 +5,7 @@ open ColorCodeSharp.Domain
 open Chessie.ErrorHandling
 open Swensen.Unquote
 open System
+open FsUnit
 
 [<Test>]
 let ``Change color test``() =
@@ -25,5 +26,5 @@ let ``Checker tests`` (colorsText:string) matchpos matchcolor =
         |> List.ofArray
     let solution = [ Pink; Red; Black; Green ] // A solution
     let feedback = colorChecker colors solution
-    feedback.MatchedColors =! matchcolor
-    feedback.MatchedPositions =! matchpos
+    feedback.MatchedColors |> should equal matchcolor
+    feedback.MatchedPositions |> should equal matchpos

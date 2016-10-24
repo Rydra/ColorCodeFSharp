@@ -19,6 +19,35 @@ module Domain =
     | Turquoise
     | Pink
 
+    type Slot =
+    | Occupied of Color
+    | Empty
+
+    type Completed =
+    | Won
+    | Lost
+
+    type GameStatus =
+    | InProgress
+    | Terminated of Completed
+
+    type Feedback = { MatchedPositions: int; MatchedColors: int }
+
+    type Guess = (int * Color list * Feedback)
+
+    type GameState = {
+            Solution: Color list
+            NSlots: int
+            Slots: Slot[]
+            AvailableColors: Color list
+            CompletedGuesses: Guess list
+            MaxGuesses: int
+            CurrentTry: int
+            Status: GameStatus
+        }
+
+    let allcolors = [| Yellow; Red; Blue; White; Black; Green; Orange; Purple; Turquoise; Pink |]
+
     let toString color =
         match color with
         | Yellow    -> "Yellow"
@@ -46,32 +75,6 @@ module Domain =
         | "pink" -> ok Pink
         | _ -> fail "unrecognized color"
 
-    type Slot =
-    | Occupied of Color
-    | Empty
-
-    type Completed =
-    | Won
-    | Lost
-
-    type GameStatus =
-    | InProgress
-    | Terminated of Completed
-
-    type Feedback = { MatchedPositions: int; MatchedColors: int }
-    type GameState = {
-            Solution: Color list
-            NSlots: int
-            Slots: Slot[]
-            AvailableColors: Color list
-            CompletedGuesses: (int * Color list * Feedback) list
-            MaxGuesses: int
-            CurrentTry: int
-            Status: GameStatus
-        }
-
-    let allcolors = [| Yellow; Red; Blue; White; Black; Green; Orange; Purple; Turquoise; Pink |]
-
     let rnd = Random()
 
     // Generates a combination of n colors that the user will require to deduce
@@ -87,42 +90,60 @@ module Domain =
             gameState.Slots.[position - 1] <- Occupied color
             ok ignore
 
-    let join (innerSequence : 'b seq) outerKeySelector innerKeySelector (outerSequence : 'a seq) =
+    let join (innerSequence : 'b seq) (outerSequence : 'a seq) outerKeySelector innerKeySelector =
         outerSequence.Join(innerSequence,
             Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector),
             fun outer inner -> (outer, inner))
 
-    let colorChecker combinationToCheck solution =
-        // Provides feedback for the combination against the real solution
-        let groupedColorsChk = 
-            combinationToCheck
+    let toNum color =
+        allcolors |> Array.findIndex (fun c -> c = color)
+
+    let colorCheckerImperative guess solution =
+        let mutable correctColor = 0
+        let mutable correctPositionAndColor = 0
+
+        let codeColorCount = Array.init (allcolors |> Array.length) (fun _ -> 0)
+        let guessColorCount = Array.init (allcolors |> Array.length) (fun _ -> 0)
+
+        for i in [0 .. (solution |> List.length) - 1] do
+            let c = solution |> List.item(i)
+            let g = guess |> List.item(i)
+
+            codeColorCount.[c |> toNum] <- codeColorCount.[c |> toNum] + 1
+            guessColorCount.[g |> toNum] <- codeColorCount.[g |> toNum] + 1
+
+            if c = g then correctPositionAndColor <- correctPositionAndColor + 1
+
+        for i in [0 .. (codeColorCount |> Array.length) - 1] do
+            correctColor <- correctColor + min codeColorCount.[i] guessColorCount.[i]
+
+        { MatchedPositions = correctPositionAndColor; MatchedColors = correctColor - correctPositionAndColor }
+
+    let colorChecker guess solution =
+        
+        let correctPositionAndColor =
+            List.zip guess solution 
+            |> Seq.filter (fun (colorFromGuess, colorFromSolution) -> colorFromGuess = colorFromSolution) 
+            |> Seq.length
+
+        let countColorsForGuess : seq<Color * int> = 
+            guess
             |> Seq.groupBy id 
-            |> Seq.map (fun (c, colors) -> (c, colors |> Seq.length))
-        let groupedColorsSol = 
+            |> Seq.map (fun (color, list) -> (color, list |> Seq.length))
+
+        let countColorsForSolution : seq<Color * int> = 
             solution
             |> Seq.groupBy id 
-            |> Seq.map (fun (c, colors) -> (c, colors |> Seq.length))
+            |> Seq.map (fun (color, list) -> (color, list |> Seq.length))
 
-        // Get the matches by color and position
-        let matchPos =
-            List.zip combinationToCheck solution |> Seq.filter (fun (chk, sol) -> chk = sol) |> Seq.length
-
-        (* The number of colors that match are the minimum between the number of colors
-         of the solution and the number of colors in the guess. For example, if the guess is
-         Red, Red, Red, Blue, Green and the solution is Blue, Blue, Red, Green, White the
-         Feedback should give you 1 match for Reds since you've matched 1 per color.
-         Inversely, if your guess was Red, Green, Purple, Green, Blue for the same solution
-         it should tell you that you have one color match for red. You get the idea... the pattern
-         is to pick the minimum amount per group.
-         Sum all the colors matches and substract the color and position matches to get
-         The color and not position matches.*)
-        let matchColor = 
-            (groupedColorsChk |> join groupedColorsSol (fun (c, _) -> c) (fun (c, _) -> c)
+        let countCorrectColors =
+            (join countColorsForGuess countColorsForSolution (fun (color, _) -> color) (fun (color, _) -> color)
             |> Seq.map (fun ((_, countGuess), (_, countSol)) -> min countGuess countSol)
             |> Seq.sum)
-            - matchPos
 
-        { MatchedPositions = matchPos; MatchedColors = matchColor }
+        let correctColor = countCorrectColors - correctPositionAndColor
+
+        { MatchedPositions = correctPositionAndColor; MatchedColors = correctColor }
 
     let startNewGame nslots ncolors =
         let availableColors = allcolors |> Seq.take ncolors |> List.ofSeq
@@ -136,6 +157,22 @@ module Domain =
             MaxGuesses = 10
             CurrentTry = 1
             Status = InProgress
+        }
+
+    let updateStatus game guess =
+        if game.Solution = guess then
+            Terminated Won
+        elif game.CurrentTry = game.MaxGuesses then
+            Terminated Lost
+        else
+            InProgress
+
+    let addGuess guess feedback game =
+        { game with 
+            Slots = Array.init game.NSlots (fun i -> Empty)
+            CompletedGuesses = (game.CurrentTry, guess, feedback) :: game.CompletedGuesses
+            CurrentTry = game.CurrentTry + 1
+            Status = updateStatus game guess
         }
 
     let confirm gameState =
@@ -153,18 +190,4 @@ module Domain =
             else
                 colorChecker guess gameState.Solution |> ok
                 
-        (fun fb ->
-            let newStatus =
-                if fb.MatchedPositions = gameState.NSlots then
-                    Terminated Won
-                elif gameState.CurrentTry = gameState.MaxGuesses then
-                    Terminated Lost
-                else
-                    InProgress
-
-            { gameState with 
-                Slots = Array.init gameState.NSlots (fun i -> Empty)
-                CompletedGuesses = (gameState.CurrentTry, guess, fb) :: gameState.CompletedGuesses
-                CurrentTry = gameState.CurrentTry + 1
-                Status = newStatus
-            }) <!> feedback
+        feedback >>= (fun fb -> gameState |> addGuess guess fb |> ok)
